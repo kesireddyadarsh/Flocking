@@ -1364,12 +1364,12 @@ void simulation_new_version( vector<Rover>* teamRover, POI* individualPOI,double
         teamRover->at(temp_rover_number).y_position = teamRover->at(temp_rover_number).y_position_vec.at(0);
         teamRover->at(temp_rover_number).theta = 0.0;
     }
-    FILE* p_xy;
-    p_xy = fopen("XY.txt", "a");
+    
     
     for (int time_step = 0 ; time_step < 5000 ; time_step++) {
 
-        
+        FILE* p_xy;
+        p_xy = fopen("XY.txt", "a");
         
         //reset_sense_new(rover_number, p_rover, p_poi); // reset and sense new values
         teamRover->at(local_rover_number).reset_sensors(); // Reset all sensors
@@ -1394,19 +1394,19 @@ void simulation_new_version( vector<Rover>* teamRover, POI* individualPOI,double
         teamRover->at(local_rover_number).move_rover(dx, dy);
         
         bool check_hit = checking_blockage(p_blocks_x, p_blocks_y, blocking_radius, teamRover->at(local_rover_number).x_position, teamRover->at(local_rover_number).y_position);
+        fprintf(p_xy, "%f \t %f\n",teamRover->at(rover_number).x_position,teamRover->at(rover_number).y_position);
+        fclose(p_xy);
         if (check_hit) {
             teamRover->at(rover_number).network_for_agent.at(local_policy).fitness = 1000000;
-            fclose(p_xy);
+            
             break;
         }else{
             
             teamRover->at(rover_number).network_for_agent.at(local_policy).fitness = (((teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))*(teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))) + ((teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))*(teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))));
         }
-        fprintf(p_xy, "%f \t %f\n",teamRover->at(rover_number).x_position,teamRover->at(rover_number).y_position);
+        //fprintf(p_xy, "%f \t %f\n",teamRover->at(rover_number).x_position,teamRover->at(rover_number).y_position);
         
     }
-    
-    fclose(p_xy);
 }
 
 void standard_ea( vector<Rover>* teamRover,int numNN){
