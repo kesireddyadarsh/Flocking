@@ -1396,7 +1396,8 @@ void simulation_new_version( vector<Rover>* teamRover, POI* individualPOI,double
         bool check_hit = checking_blockage(p_blocks_x, p_blocks_y, blocking_radius, teamRover->at(local_rover_number).x_position, teamRover->at(local_rover_number).y_position);
         if (check_hit) {
             teamRover->at(rover_number).network_for_agent.at(local_policy).fitness = 1000000;
-            
+            fclose(p_xy);
+            break;
         }else{
             
             teamRover->at(rover_number).network_for_agent.at(local_policy).fitness = (((teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))*(teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))) + ((teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))*(teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))));
