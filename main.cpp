@@ -1340,6 +1340,63 @@ bool checking_blockage(vector<double>* p_blocks_x, vector<double>* p_blocks_y, d
 }
 
 
+/*********************************************************************************
+ calculates distance between two points
+ Checks if values are with in tolerance. If with in returns true
+ ********************************************************************************/
+double cal_distance(double x1, double y1 , double x2,double y2){
+    double final_value = sqrt(((x1-x2)*(x1-x2))+ ((y1-y2)*(y1-y2)));
+    return final_value;
+}
+
+bool check_for_tolerance(double ref, double value){
+    
+    double high_tolerance = ref + 0.1;
+    double lower_tolerance = ref -0.1;
+    
+    if ((high_tolerance <= value )&& (lower_tolerance>=value)) {
+        return true;
+    }
+    
+    return false;
+}
+
+
+/******************************************************************************
+ Below are the functions for flocking
+ 1. Coolision avoidance should make sure agents dont collide with each other and also making sure it does not collide with abstracle. 
+ 2. Flocking will return true of false. I will just check flocking pattern of all agents and return ture or false.
+ ****************************************************************************/
+
+
+void collision_avoidance(vector<Rover>* teamRover, int blocking_radius ,vector<double>* p_blocks_x, vector<double>* p_blocks_y){
+    
+}
+
+
+
+bool flocking(vector<Rover>* teamRover, vector<double>* p_vec_distance_between_agents, int leader_number){
+    
+    vector<double> current_distance;
+    double distance;
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        distance = cal_distance(teamRover->at(rover_number).x_position, teamRover->at(rover_number).y_position, teamRover->at(leader_number).x_position, teamRover->at(leader_number).y_position);
+        current_distance.push_back(distance);
+    }
+    
+    assert( current_distance.size() == p_vec_distance_between_agents->size());
+    
+    bool temp_check = false;
+    vector<bool> flag_tolerance;
+    for (int index = 0 ; index < current_distance.size(); index++) {
+        temp_check = check_for_tolerance(p_vec_distance_between_agents->at(index), current_distance.at(index));
+        if (!temp_check) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /**********************************************************************************
  Leader does the simulation sensing and generating path. 
  Followers will check if they can move to new position if they can move they move to new position.
@@ -1427,7 +1484,7 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
 }
 
 
-void simulation_each_rover(vector<Rover>* teamRover, POI* individualPOI, double scaling_number, int blocking_radius, vector<double>* p_blocks_x, vector<double>* p_blocks_y){
+void simulation_each_rover(vector<Rover>* teamRover, POI* individualPOI, double scaling_number, int blocking_radius, vector<double>* p_blocks_x, vector<double>* p_blocks_y, vector<double>* p_vec_distance_between_agents){
     
     //setting all rovers to inital state
     for (int temp_rover_number =0 ; temp_rover_number<teamRover->size(); temp_rover_number++) {
@@ -1483,15 +1540,19 @@ void simulation_each_rover(vector<Rover>* teamRover, POI* individualPOI, double 
         }
         
         //Check for blockage
-        bool agent_on_block=false;
+        bool check_agent_on_block=false;
         for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
-            agent_on_block = checking_blockage(p_blocks_x, p_blocks_y, blocking_radius, teamRover->at(rover_number).x_position, teamRover->at(rover_number).y_position);
-            if (!agent_on_block) {
+            check_agent_on_block = checking_blockage(p_blocks_x, p_blocks_y, blocking_radius, teamRover->at(rover_number).x_position, teamRover->at(rover_number).y_position);
+            if (!check_agent_on_block) {
                 break;
             }
         }
         
-        if (!agent_on_block) {
+        //check for flocking
+        bool check_flocking = false;
+        check_flocking = flocking(teamRover, p_vec_distance_between_agents,leader_index);
+        
+        if (!check_agent_on_block  && (check_flocking == false)) {
             for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
                 teamRover->at(rover_number).x_position = teamRover->at(rover_number).previous_x_position;
                 teamRover->at(rover_number).y_position = teamRover->at(rover_number).previous_y_position;
@@ -1513,6 +1574,8 @@ void simulation_each_rover(vector<Rover>* teamRover, POI* individualPOI, double 
     fclose(p_xy);
     
 }
+
+
 
 /***************************
  Main
@@ -1588,11 +1651,29 @@ int main(int argc, const char * argv[]) {
         
         teamRover.at(select_leader).leader = true;
         
+        //setting all rovers to inital state
+        for (int temp_rover_number =0 ; temp_rover_number<teamRover.size(); temp_rover_number++) {
+            teamRover.at(temp_rover_number).x_position = teamRover.at(temp_rover_number).x_position_vec.at(0);
+            teamRover.at(temp_rover_number).y_position = teamRover.at(temp_rover_number).y_position_vec.at(0);
+            teamRover.at(temp_rover_number).theta = 0.0;
+        }
+        
+        vector<double> vec_distance_between_agents;
+        vector<double>* p_vec_distance_between_agents = & vec_distance_between_agents;
+        
+        double distance;
+        for (int rover_number = 0 ; rover_number < teamRover.size(); rover_number++) {
+            distance = cal_distance(teamRover.at(rover_number).x_position, teamRover.at(rover_number).y_position,teamRover.at(select_leader).x_position,teamRover.at(select_leader).y_position);
+            vec_distance_between_agents.push_back(distance);
+        }
+        
+        assert(vec_distance_between_agents.size() == number_of_rovers);
+        
         //bool test = checking_blockage(p_blocks_x, p_blocks_y, radius_blocking, teamRover.at(0).x_position_vec.at(0), teamRover.at(0).y_position_vec.at(0));
         
         for (int generation = 0 ; generation < 1 ; generation ++) {
-            simulation_each_rover(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y);
-            simulation_each_rover(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y);
+            simulation(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y);
+            simulation_each_rover(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y, p_vec_distance_between_agents);
         }
         
         
