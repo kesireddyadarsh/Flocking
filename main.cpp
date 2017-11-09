@@ -1460,6 +1460,9 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
     
     assert(leader_index <= teamRover->size());
     
+    FILE* p_file;
+    p_file = fopen("XY.txt", "a");
+    
     //Timestep to run simulation
     for (int time_step = 0 ; time_step < 5000 ; time_step++) {
         
@@ -1505,7 +1508,10 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
                 teamRover->at(rover_number).theta = teamRover->at(rover_number).previous_theta;
             }
         }
+        
+        fprintf(p_file, "%f \t %f", teamRover->at(leader_index).x_position,teamRover->at(leader_index).y_position);
     }
+    fclose(p_file);
 }
 
 
