@@ -1586,14 +1586,7 @@ int main(int argc, const char * argv[]) {
         //bool test = checking_blockage(p_blocks_x, p_blocks_y, radius_blocking, teamRover.at(0).x_position_vec.at(0), teamRover.at(0).y_position_vec.at(0));
         
         for (int generation = 0 ; generation < 1 ; generation ++) {
-            
-            
-            
-            for (int rover_number = 0 ; rover_number < teamRover.size(); rover_number++) {
-                if (teamRover.at(rover_number).leader) {
-                    simulation_new_version(p_rover, p_poi, scaling_number, 0, rover_number, radius_blocking, p_blocks_x, p_blocks_y);
-                }
-            }
+            simulation(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y);
         }
             
     }
