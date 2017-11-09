@@ -1503,7 +1503,7 @@ void simulation_each_rover(vector<Rover>* teamRover, POI* individualPOI, double 
         }
     }
     FILE* p_xy;
-    p_xy = fopen("XY.txt", "a");
+    p_xy = fopen("XY_1.txt", "a");
     for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
         for (int position = 0 ; position < teamRover->at(rover_number).x_position_vec.size(); position++) {
             fprintf(p_xy, "%f \t %f \n", teamRover->at(rover_number).x_position_vec.at(position), teamRover->at(rover_number).y_position_vec.at(position));
