@@ -1460,9 +1460,6 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
     
     assert(leader_index <= teamRover->size());
     
-    FILE* p_file;
-    p_file = fopen("XY.txt", "a");
-    
     //Timestep to run simulation
     for (int time_step = 0 ; time_step < 5000 ; time_step++) {
         
@@ -1491,6 +1488,9 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
         for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
             teamRover->at(rover_number).move_rover(dx, dy);
         }
+        teamRover->at(leader_index).x_position_vec.push_back(teamRover->at(leader_index).x_position);
+        teamRover->at(leader_index).y_position_vec.push_back(teamRover->at(leader_index).y_position);
+        
         
         //Check for blockage
         bool agent_on_block=false;
@@ -1508,11 +1508,17 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
                 teamRover->at(rover_number).theta = teamRover->at(rover_number).previous_theta;
                 time_step--;
             }
+            teamRover->at(leader_index).x_position_vec.pop_back();
+            teamRover->at(leader_index).y_position_vec.pop_back();
         }
-        
-        fprintf(p_file, "%f \t %f \n", teamRover->at(leader_index).x_position,teamRover->at(leader_index).y_position);
     }
-    fclose(p_file);
+    
+    FILE* p_xy;
+    p_xy = fopen("XY.txt", "a");
+    for (int position = 0 ; position < teamRover->at(leader_index).x_position_vec.size(); position++) {
+        fprintf(p_xy, "%f \t %f \n", teamRover->at(leader_index).x_position_vec.at(position), teamRover->at(leader_index).y_position_vec.at(position));
+    }
+    fclose(p_xy);
 }
 
 
@@ -1531,7 +1537,7 @@ int main(int argc, const char * argv[]) {
     if (run_simulation) {
 
         //First set up environment
-        int number_of_rovers = 10;
+        int number_of_rovers = 5;
         
         
         //Set values of poi's
@@ -1539,7 +1545,7 @@ int main(int argc, const char * argv[]) {
         POI* p_poi = &individualPOI;
         
         //Create POI
-        individualPOI.x_position_poi_vec.push_back(0.0);
+        individualPOI.x_position_poi_vec.push_back(50.0);
         individualPOI.y_position_poi_vec.push_back(50.0);
         individualPOI.value_poi_vec.push_back(100);
         
@@ -1595,6 +1601,8 @@ int main(int argc, const char * argv[]) {
         for (int generation = 0 ; generation < 1 ; generation ++) {
             simulation(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y);
         }
+        
+        
             
     }
     return 0;
