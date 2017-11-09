@@ -1506,10 +1506,11 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
                 teamRover->at(rover_number).x_position = teamRover->at(rover_number).previous_x_position;
                 teamRover->at(rover_number).y_position = teamRover->at(rover_number).previous_y_position;
                 teamRover->at(rover_number).theta = teamRover->at(rover_number).previous_theta;
+                time_step--;
             }
         }
         
-        fprintf(p_file, "%f \t %f", teamRover->at(leader_index).x_position,teamRover->at(leader_index).y_position);
+        fprintf(p_file, "%f \t %f \n", teamRover->at(leader_index).x_position,teamRover->at(leader_index).y_position);
     }
     fclose(p_file);
 }
