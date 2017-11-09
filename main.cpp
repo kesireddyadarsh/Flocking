@@ -1496,12 +1496,12 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
         bool agent_on_block=false;
         for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
             agent_on_block = checking_blockage(p_blocks_x, p_blocks_y, blocking_radius, teamRover->at(rover_number).x_position, teamRover->at(rover_number).y_position);
-            if (agent_on_block) {
+            if (!agent_on_block) {
                 break;
             }
         }
         
-        if (agent_on_block) {
+        if (!agent_on_block) {
             for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
                 teamRover->at(rover_number).x_position = teamRover->at(rover_number).previous_x_position;
                 teamRover->at(rover_number).y_position = teamRover->at(rover_number).previous_y_position;
