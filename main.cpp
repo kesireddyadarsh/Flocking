@@ -1339,101 +1339,6 @@ bool checking_blockage(vector<double>* p_blocks_x, vector<double>* p_blocks_y, d
     return true;
 }
 
-/********************************************************************************
- simulation: Following things happen here and flow is same
- 1. policy numbers are saved into a vector
- 2. setting rovers to initial position
- 3. moving rovers in each time step and updating its distance to POI
- 4. for each policy in team calculate local reward
- 5. for each policy in team calculate global reward ( This will be same for each team)
- 6. for each policu in team calculate difference reward
- ********************************************************************************/
-
-void simulation_new_version( vector<Rover>* teamRover, POI* individualPOI,double scaling_number, int policy, int rover_number, int blocking_radius, vector<double>* p_blocks_x, vector<double>* p_blocks_y){
-    bool full_verbose  = false;
-    bool verbose = false;
-    
-    int local_policy = policy;
-    int local_rover_number = rover_number;
-    
-    if (full_verbose) {
-        cout<<"Locations of POI"<<endl;
-        for (int temp_number = 0; temp_number < individualPOI->x_position_poi_vec.size(); temp_number++) {
-            cout<<individualPOI->x_position_poi_vec.at(temp_number)<<"\t"<<individualPOI->y_position_poi_vec.at(temp_number)<<endl;
-        }
-    }
-    
-    //setting all rovers to inital state
-    for (int temp_rover_number =0 ; temp_rover_number<teamRover->size(); temp_rover_number++) {
-        teamRover->at(temp_rover_number).x_position = teamRover->at(temp_rover_number).x_position_vec.at(0);
-        teamRover->at(temp_rover_number).y_position = teamRover->at(temp_rover_number).y_position_vec.at(0);
-        teamRover->at(temp_rover_number).theta = 0.0;
-    }
-    FILE* p_xy;
-    p_xy = fopen("XY.txt", "a");
-    
-    for (int time_step = 0 ; time_step < 5000 ; time_step++) {
-
-        
-        
-        //reset_sense_new(rover_number, p_rover, p_poi); // reset and sense new values
-        teamRover->at(local_rover_number).reset_sensors(); // Reset all sensors
-        teamRover->at(local_rover_number).sense_all_values(individualPOI->x_position_poi_vec, individualPOI->y_position_poi_vec, individualPOI->value_poi_vec); // sense all values
-        
-        //Change of input values
-        for (int change_sensor_values = 0 ; change_sensor_values <teamRover->at(local_rover_number).sensors.size(); change_sensor_values++) {
-            teamRover->at(local_rover_number).sensors.at(change_sensor_values) /= scaling_number;
-        }
-        
-        teamRover->at(local_rover_number).network_for_agent.at(local_policy).feedForward(teamRover->at(local_rover_number).sensors); // scaled input into neural network
-        for (int change_sensor_values = 0 ; change_sensor_values <teamRover->at(local_rover_number).sensors.size(); change_sensor_values++) {
-            assert(!isnan(teamRover->at(rover_number).sensors.at(change_sensor_values)));
-        }
-        
-        double dx = teamRover->at(local_rover_number).network_for_agent.at(local_policy).outputvaluesNN.at(0);
-        double dy = teamRover->at(local_rover_number).network_for_agent.at(local_policy).outputvaluesNN.at(1);
-        teamRover->at(local_rover_number).network_for_agent.at(local_policy).outputvaluesNN.clear();
-        
-        assert(!isnan(dx));
-        assert(!isnan(dy));
-        teamRover->at(local_rover_number).move_rover(dx, dy);
-        
-        bool check_hit = checking_blockage(p_blocks_x, p_blocks_y, blocking_radius, teamRover->at(local_rover_number).x_position, teamRover->at(local_rover_number).y_position);
-        if (check_hit) {
-            teamRover->at(rover_number).network_for_agent.at(local_policy).fitness = 1000000;
-        }else{
-            
-            teamRover->at(rover_number).network_for_agent.at(local_policy).fitness = (((teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))*(teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))) + ((teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))*(teamRover->at(rover_number).x_position - individualPOI->x_position_poi_vec.at(0))));
-        }
-        fprintf(p_xy, "%f \t %f\n",teamRover->at(rover_number).x_position,teamRover->at(rover_number).y_position);
-        
-    }
-    
-    fclose(p_xy);
-}
-
-void standard_ea( vector<Rover>* teamRover,int numNN){
-    int rover_number =0 ;
-    
-    for (int policy = 0 ; policy < numNN/2; policy++) {
-        int random_number_1 = rand()%teamRover->at(rover_number).network_for_agent.size();
-        int random_number_2 = rand()%teamRover->at(rover_number).network_for_agent.size();
-        while ((random_number_1 == random_number_2) || (random_number_1 == teamRover->at(rover_number).network_for_agent.size()) || (random_number_2 == teamRover->at(rover_number).network_for_agent.size())) {
-            random_number_2 = rand()%teamRover->at(rover_number).network_for_agent.size();
-            random_number_1 = rand()%teamRover->at(rover_number).network_for_agent.size();
-        }
-        
-        if (teamRover->at(rover_number).network_for_agent.at(random_number_1).fitness > teamRover->at(rover_number).network_for_agent.at(random_number_2).fitness) {
-            // kill 1
-            teamRover->at(rover_number).network_for_agent.erase(teamRover->at(rover_number).network_for_agent.begin()+random_number_1);
-        }else{
-            teamRover->at(rover_number).network_for_agent.erase(teamRover->at(rover_number).network_for_agent.begin()+random_number_2);
-        }
-    }
-    
-    
-    repopulate(teamRover, numNN);
-}
 
 /**********************************************************************************
  Leader does the simulation sensing and generating path. 
@@ -1545,7 +1450,7 @@ int main(int argc, const char * argv[]) {
         POI* p_poi = &individualPOI;
         
         //Create POI
-        individualPOI.x_position_poi_vec.push_back(50.0);
+        individualPOI.x_position_poi_vec.push_back(0.0);
         individualPOI.y_position_poi_vec.push_back(50.0);
         individualPOI.value_poi_vec.push_back(100);
         
