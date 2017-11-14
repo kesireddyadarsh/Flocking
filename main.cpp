@@ -1585,7 +1585,7 @@ void simulation_each_rover(vector<Rover>* teamRover, POI* individualPOI, double 
         check_agent_collision = collision_avoidance(teamRover, p_vec_distance_between_agents, agent_collision_radius);
         
         
-        if (!check_agent_on_block  || (check_flocking == false)  || (check_agent_collision == false)) {
+        if ((!check_agent_on_block)  || (check_flocking == false)  || (check_agent_collision == false)) {
             for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
                 teamRover->at(rover_number).x_position = teamRover->at(rover_number).previous_x_position;
                 teamRover->at(rover_number).y_position = teamRover->at(rover_number).previous_y_position;
@@ -1633,7 +1633,7 @@ int main(int argc, const char * argv[]) {
         POI* p_poi = &individualPOI;
         
         //Create POI
-        individualPOI.x_position_poi_vec.push_back(0.0);
+        individualPOI.x_position_poi_vec.push_back(50.0);
         individualPOI.y_position_poi_vec.push_back(50.0);
         individualPOI.value_poi_vec.push_back(100);
         
@@ -1663,6 +1663,17 @@ int main(int argc, const char * argv[]) {
             teamRover.at(rover_number).create_neural_network_population(numNN, topology);
         }
         
+        //setting all rovers to inital state
+        for (int temp_rover_number =0 ; temp_rover_number<teamRover.size(); temp_rover_number++) {
+            teamRover.at(temp_rover_number).x_position = teamRover.at(temp_rover_number).x_position_vec.at(0);
+            teamRover.at(temp_rover_number).y_position = teamRover.at(temp_rover_number).y_position_vec.at(0);
+            teamRover.at(temp_rover_number).previous_x_position = teamRover.at(temp_rover_number).x_position_vec.at(0);
+            teamRover.at(temp_rover_number).previous_x_position = teamRover.at(temp_rover_number).y_position_vec.at(0);
+            teamRover.at(temp_rover_number).theta = 0.0;
+            teamRover.at(temp_rover_number).previous_theta = 0.0;
+            
+        }
+        
         //Find Scaling Number
         double scaling_number = find_scaling_number(p_rover,p_poi);
         
@@ -1686,17 +1697,6 @@ int main(int argc, const char * argv[]) {
         teamRover.at(select_leader).leader = true;
         
         double agent_collision_radius = 0.15;
-        
-        //setting all rovers to inital state
-        for (int temp_rover_number =0 ; temp_rover_number<teamRover.size(); temp_rover_number++) {
-            teamRover.at(temp_rover_number).x_position = teamRover.at(temp_rover_number).x_position_vec.at(0);
-            teamRover.at(temp_rover_number).y_position = teamRover.at(temp_rover_number).y_position_vec.at(0);
-            teamRover.at(temp_rover_number).previous_x_position = teamRover.at(temp_rover_number).x_position_vec.at(0);
-            teamRover.at(temp_rover_number).previous_x_position = teamRover.at(temp_rover_number).y_position_vec.at(0);
-            teamRover.at(temp_rover_number).theta = 0.0;
-            teamRover.at(temp_rover_number).previous_theta = 0.0;
-            
-        }
         
         vector<double> vec_distance_between_agents;
         vector<double>* p_vec_distance_between_agents = & vec_distance_between_agents;
