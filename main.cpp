@@ -1439,6 +1439,13 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
     //Timestep to run simulation
     for (int time_step = 0 ; time_step < 5000 ; time_step++) {
         
+        // Set X Y and theta to keep track of previous values
+        for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+            teamRover->at(rover_number).previous_x_position = teamRover->at(rover_number).x_position;
+            teamRover->at(rover_number).previous_y_position = teamRover->at(rover_number).y_position;
+            teamRover->at(rover_number).previous_theta = teamRover->at(rover_number).theta;
+        }
+        
         // reset and sense new values
         teamRover->at(leader_index).reset_sensors(); // Reset all sensors
         teamRover->at(leader_index).sense_all_values(individualPOI->x_position_poi_vec, individualPOI->y_position_poi_vec, individualPOI->value_poi_vec); // sense all values
@@ -1518,6 +1525,13 @@ void simulation_each_rover(vector<Rover>* teamRover, POI* individualPOI, double 
     
     //Timestep to run simulation
     for (int time_step = 0 ; time_step < 5000 ; time_step++) {
+        
+        // Set X Y and theta to keep track of previous values
+        for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+            teamRover->at(rover_number).previous_x_position = teamRover->at(rover_number).x_position;
+            teamRover->at(rover_number).previous_y_position = teamRover->at(rover_number).y_position;
+            teamRover->at(rover_number).previous_theta = teamRover->at(rover_number).theta;
+        }
         
         // reset and sense new values
         for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
@@ -1677,7 +1691,11 @@ int main(int argc, const char * argv[]) {
         for (int temp_rover_number =0 ; temp_rover_number<teamRover.size(); temp_rover_number++) {
             teamRover.at(temp_rover_number).x_position = teamRover.at(temp_rover_number).x_position_vec.at(0);
             teamRover.at(temp_rover_number).y_position = teamRover.at(temp_rover_number).y_position_vec.at(0);
+            teamRover.at(temp_rover_number).previous_x_position = teamRover.at(temp_rover_number).x_position_vec.at(0);
+            teamRover.at(temp_rover_number).previous_x_position = teamRover.at(temp_rover_number).y_position_vec.at(0);
             teamRover.at(temp_rover_number).theta = 0.0;
+            teamRover.at(temp_rover_number).previous_theta = 0.0;
+            
         }
         
         vector<double> vec_distance_between_agents;
