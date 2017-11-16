@@ -268,6 +268,9 @@ public:
     //Check for leader
     bool leader = false;
     bool move_possible = false;
+    
+    //This to calculate velocity and time step
+    vector<double> velocity;
 };
 
 // variables used: indiNet -- object to Net
@@ -1414,6 +1417,16 @@ bool flocking(vector<Rover>* teamRover, vector<double>* p_vec_distance_between_a
     return true;
 }
 
+void cal_velocity(vector<Rover>* teamRover){
+    //Calculate velocity
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        for (int x = 0 , y = 1; y < teamRover->at(rover_number).x_position_vec.size(); x++,y++) {
+            double distance = cal_distance(teamRover->at(rover_number).x_position_vec.at(x), teamRover->at(rover_number).y_position_vec.at(x), teamRover->at(rover_number).x_position_vec.at(y), teamRover->at(rover_number).y_position_vec.at(y));
+            teamRover->at(rover_number).velocity.push_back(distance);
+        }
+    }
+}
+
 /**********************************************************************************
  Leader does the simulation sensing and generating path. 
  Followers will check if they can move to new position if they can move they move to new position.
@@ -1514,6 +1527,9 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
         }
     }
     
+    cal_velocity(teamRover);
+    
+    
     FILE* p_xy;
     p_xy = fopen("XY_leader.txt", "a");
     for (int position = 0 ; position < teamRover->at(leader_index).x_position_vec.size(); position++) {
@@ -1531,6 +1547,15 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
     }
     fclose(p_xy_f);
     
+    FILE* p_velocity;
+    p_velocity = fopen("Velocity.txt", "a");
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        for (int position = 0 ; position < teamRover->at(rover_number).velocity.size(); position++) {
+            fprintf(p_velocity, "%f \t",teamRover->at(rover_number).velocity.at(position));
+        }
+        fprintf(p_velocity, "\n");
+    }
+    fclose(p_velocity);
 }
 
 
@@ -1624,6 +1649,10 @@ void simulation_each_rover(vector<Rover>* teamRover, POI* individualPOI, double 
             }
         }
     }
+    
+    cal_velocity(teamRover);
+    
+    
     FILE* p_xy;
     p_xy = fopen("XY_1.txt", "a");
     for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
@@ -1633,6 +1662,16 @@ void simulation_each_rover(vector<Rover>* teamRover, POI* individualPOI, double 
         fprintf(p_xy, "\n");
     }
     fclose(p_xy);
+    
+    FILE* p_velocity;
+    p_velocity = fopen("Velocity_1.txt", "a");
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        for (int position = 0 ; position < teamRover->at(rover_number).velocity.size(); position++) {
+            fprintf(p_velocity, "%f \t",teamRover->at(rover_number).velocity.at(position));
+        }
+        fprintf(p_velocity, "\n");
+    }
+    fclose(p_velocity);
     
 }
 
