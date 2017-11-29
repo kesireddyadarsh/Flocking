@@ -271,6 +271,15 @@ public:
     
     //This to calculate velocity and time step
     vector<double> velocity;
+    
+    //Fitness
+    double blockage;
+    double collision;
+    double flocking;
+    
+    //velocity
+    double velocity_of_agent;
+    
 };
 
 // variables used: indiNet -- object to Net
@@ -1393,8 +1402,6 @@ bool collision_avoidance(vector<Rover>* teamRover, vector<double>* p_vec_distanc
     return true;
 }
 
-
-
 bool flocking(vector<Rover>* teamRover, vector<double>* p_vec_distance_between_agents, int leader_number){
     
     vector<double> current_distance;
@@ -1529,6 +1536,19 @@ void simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_num
     
     cal_velocity(teamRover);
     
+    // first select velocity
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        teamRover->at(rover_number).velocity_of_agent = rand()%2;
+    }
+    
+    // flcoking and velocity
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        if ( rover_number != leader_index) {
+            for (int time = 0 ; time < teamRover->at(leader_index).x_position_vec.size(); time++) {
+                
+            }
+        }
+    }
     
     FILE* p_xy;
     p_xy = fopen("XY_leader.txt", "a");
@@ -1676,6 +1696,161 @@ void simulation_each_rover(vector<Rover>* teamRover, POI* individualPOI, double 
 }
 
 
+void simulation_new_try(vector<Rover>* teamRover, POI* individualPOI, double scaling_number, int blocking_radius, vector<double>* p_blocks_x, vector<double>* p_blocks_y, vector<double>* p_vec_distance_between_agents, double agent_collision_radius){
+    
+    //setting all rovers to inital state
+    for (int temp_rover_number =0 ; temp_rover_number<teamRover->size(); temp_rover_number++) {
+        teamRover->at(temp_rover_number).x_position = teamRover->at(temp_rover_number).x_position_vec.at(0);
+        teamRover->at(temp_rover_number).y_position = teamRover->at(temp_rover_number).y_position_vec.at(0);
+        teamRover->at(temp_rover_number).theta = 0.0;
+    }
+    
+    //Find the leader index number
+    int leader_index = 99999999;
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        if(teamRover->at(rover_number).leader)
+            leader_index = rover_number;
+    }
+    
+    assert(leader_index <= teamRover->size());
+    
+    //Timestep to run simulation
+    for (int time_step = 0 ; time_step < 5000 ; time_step++) {
+        
+        // Set X Y and theta to keep track of previous values
+        for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+            teamRover->at(rover_number).previous_x_position = teamRover->at(rover_number).x_position;
+            teamRover->at(rover_number).previous_y_position = teamRover->at(rover_number).y_position;
+            teamRover->at(rover_number).previous_theta = teamRover->at(rover_number).theta;
+        }
+        
+        // reset and sense new values
+        for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+            teamRover->at(rover_number).reset_sensors(); // Reset all sensors
+            teamRover->at(rover_number).sense_all_values(individualPOI->x_position_poi_vec, individualPOI->y_position_poi_vec, individualPOI->value_poi_vec); // sense all values
+        }
+        
+        //Change of input values
+        for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+            for (int change_sensor_values = 0 ; change_sensor_values <teamRover->at(leader_index).sensors.size(); change_sensor_values++) {
+                teamRover->at(leader_index).sensors.at(change_sensor_values) /= scaling_number;
+            }
+        }
+        
+        //Neural network generating values
+        for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+            teamRover->at(leader_index).network_for_agent.at(0).feedForward(teamRover->at(leader_index).sensors);
+            for (int change_sensor_values = 0 ; change_sensor_values <teamRover->at(leader_index).sensors.size(); change_sensor_values++) {
+                assert(!isnan(teamRover->at(leader_index).sensors.at(change_sensor_values)));
+            }
+            double dx = teamRover->at(leader_index).network_for_agent.at(0).outputvaluesNN.at(0);
+            double dy = teamRover->at(leader_index).network_for_agent.at(0).outputvaluesNN.at(1);
+            teamRover->at(leader_index).network_for_agent.at(0).outputvaluesNN.clear();
+            
+            //Move rovers
+            assert(!isnan(dx));
+            assert(!isnan(dy));
+            for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+                teamRover->at(rover_number).move_rover(dx, dy);
+            }
+            
+            teamRover->at(rover_number).x_position_vec.push_back(teamRover->at(rover_number).x_position);
+            teamRover->at(rover_number).y_position_vec.push_back(teamRover->at(rover_number).y_position);
+        }
+        
+        //Check for blockage
+        /*
+        bool check_agent_on_block=false;
+        for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+            check_agent_on_block = checking_blockage(p_blocks_x, p_blocks_y, blocking_radius, teamRover->at(rover_number).x_position, teamRover->at(rover_number).y_position);
+            if (!check_agent_on_block) {
+                break;
+            }
+        }
+        
+        //check for flocking
+        //bool check_flocking = false;
+        //check_flocking = flocking(teamRover, p_vec_distance_between_agents,leader_index);
+        
+        //check for agent collision
+        //bool check_agent_collision = false;
+        //check_agent_collision = collision_avoidance(teamRover, p_vec_distance_between_agents, agent_collision_radius);
+        /*
+        if ((!check_agent_on_block)) {
+            for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+                teamRover->at(rover_number).x_position = teamRover->at(rover_number).previous_x_position;
+                teamRover->at(rover_number).y_position = teamRover->at(rover_number).previous_y_position;
+                teamRover->at(rover_number).theta = teamRover->at(rover_number).previous_theta;
+                time_step--;
+                teamRover->at(rover_number).x_position_vec.pop_back();
+                teamRover->at(rover_number).y_position_vec.pop_back();
+            }
+        }
+         */
+    }
+    
+    cal_velocity(teamRover);
+    
+    
+    FILE* p_xy;
+    p_xy = fopen("XY_1.txt", "a");
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        for (int position = 0 ; position < teamRover->at(rover_number).x_position_vec.size(); position++) {
+            fprintf(p_xy, "%f \t %f \n", teamRover->at(rover_number).x_position_vec.at(position), teamRover->at(rover_number).y_position_vec.at(position));
+        }
+        fprintf(p_xy, "\n");
+    }
+    fclose(p_xy);
+    
+    FILE* p_velocity;
+    p_velocity = fopen("Velocity_1.txt", "a");
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        for (int position = 0 ; position < teamRover->at(rover_number).velocity.size(); position++) {
+            fprintf(p_velocity, "%f \t",teamRover->at(rover_number).velocity.at(position));
+        }
+        fprintf(p_velocity, "\n");
+    }
+    fclose(p_velocity);
+    
+    /***************************
+     Punishment applied
+     **************************/
+    //This is to check collision avodiance with obstacle
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        for (int position = 0  ; position < teamRover->at(rover_number).x_position_vec.size(); position++) {
+            bool check_blockage;
+            check_blockage = checking_blockage(p_blocks_x, p_blocks_y, blocking_radius, teamRover->at(rover_number).x_position, teamRover->at(rover_number).y_position);
+            if (!check_blockage) {
+                teamRover->at(rover_number).blockage = 1000000;
+                break;
+            }
+        }
+    }
+    
+    //Check for flocking
+    vector<double> current_distance;
+    double distance;
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        distance = cal_distance(teamRover->at(rover_number).x_position, teamRover->at(rover_number).y_position, teamRover->at(leader_index).x_position, teamRover->at(leader_index).y_position);
+        current_distance.push_back(distance);
+    }
+    
+    assert( current_distance.size() == p_vec_distance_between_agents->size());
+    
+    bool temp_check = false;
+    vector<bool> flag_tolerance;
+    for (int index = 0 ; index < current_distance.size(); index++) {
+        temp_check = check_for_tolerance(p_vec_distance_between_agents->at(index), current_distance.at(index));
+        if (!temp_check) {
+            
+        }
+    }
+
+
+}
+
+
+
 
 /***************************
  Main
@@ -1781,6 +1956,13 @@ int main(int argc, const char * argv[]) {
             simulation(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y,p_vec_distance_between_agents, agent_collision_radius);
             simulation_each_rover(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y, p_vec_distance_between_agents, agent_collision_radius);
         }
+        
+        for (int generation = 0 ; generation < 10 ; generation ++) {
+            simulation_new_try(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y, p_vec_distance_between_agents, agent_collision_radius);
+            
+        }
+        
+        
     }
     return 0;
 }
