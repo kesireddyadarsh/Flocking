@@ -1884,54 +1884,50 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
     for (int iterations = 0 ; iterations < 100; iterations++) {
         //Create 10 Neural Network
         for (int neural_network = 0 ; neural_network < teamRover->at(leader_index).path_finder_network.size();neural_network++) {
-            
-        }
-    }
-    
-    
-    
-    //Timestep to run simulation
-    for (int time_step = 0 ; time_step < 5000 ; time_step++) {
-        
-        // Set X Y and theta to keep track of previous values
-        teamRover->at(leader_index).previous_x_position = teamRover->at(leader_index).x_position;
-        teamRover->at(leader_index).previous_y_position = teamRover->at(leader_index).y_position;
-        teamRover->at(leader_index).previous_theta = teamRover->at(leader_index).theta;
-        
-        // reset and sense new values
-        teamRover->at(leader_index).reset_sensors(); // Reset all sensors
-        teamRover->at(leader_index).sense_all_values(individualPOI->x_position_poi_vec, individualPOI->y_position_poi_vec, individualPOI->value_poi_vec); // sense all values
-        
-        //Change of input values
-        for (int change_sensor_values = 0 ; change_sensor_values <teamRover->at(leader_index).sensors.size(); change_sensor_values++) {
-            teamRover->at(leader_index).sensors.at(change_sensor_values) /= scaling_number;
-        }
-        
-        //Neural network generating values
-        teamRover->at(leader_index).network_for_agent.at(0).feedForward(teamRover->at(leader_index).sensors);
-        for (int change_sensor_values = 0 ; change_sensor_values <teamRover->at(leader_index).sensors.size(); change_sensor_values++) {
-            assert(!isnan(teamRover->at(leader_index).sensors.at(change_sensor_values)));
-        }
-        
-        double dx = teamRover->at(leader_index).network_for_agent.at(0).outputvaluesNN.at(0);
-        double dy = teamRover->at(leader_index).network_for_agent.at(0).outputvaluesNN.at(1);
-        teamRover->at(leader_index).network_for_agent.at(0).outputvaluesNN.clear();
-        
-        //Move rovers
-        assert(!isnan(dx));
-        assert(!isnan(dy));
-        
-        teamRover->at(leader_index).move_rover(dx, dy);
-        teamRover->at(leader_index).x_position_vec.push_back(teamRover->at(leader_index).x_position);
-        teamRover->at(leader_index).y_position_vec.push_back(teamRover->at(leader_index).y_position);
-        
-        
-        //Check for blockage
-        bool agent_on_block=false;
-        for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
-            agent_on_block = checking_blockage(p_blocks_x, p_blocks_y, blocking_radius, teamRover->at(rover_number).x_position, teamRover->at(rover_number).y_position);
-            if (!agent_on_block) {
-                teamRover->at(leader_index).network_for_agent.at(leader_index).fitness = 9999999;
+            //Timestep to run simulation
+            for (int time_step = 0 ; time_step < 5000 ; time_step++) {
+                
+                // Set X Y and theta to keep track of previous values
+                teamRover->at(leader_index).previous_x_position = teamRover->at(leader_index).x_position;
+                teamRover->at(leader_index).previous_y_position = teamRover->at(leader_index).y_position;
+                teamRover->at(leader_index).previous_theta = teamRover->at(leader_index).theta;
+                
+                // reset and sense new values
+                teamRover->at(leader_index).reset_sensors(); // Reset all sensors
+                teamRover->at(leader_index).sense_all_values(individualPOI->x_position_poi_vec, individualPOI->y_position_poi_vec, individualPOI->value_poi_vec); // sense all values
+                
+                //Change of input values
+                for (int change_sensor_values = 0 ; change_sensor_values <teamRover->at(leader_index).sensors.size(); change_sensor_values++) {
+                    teamRover->at(leader_index).sensors.at(change_sensor_values) /= scaling_number;
+                }
+                
+                //Neural network generating values
+                teamRover->at(leader_index).path_finder_network.at(neural_network).feedForward(teamRover->at(leader_index).sensors);
+                for (int change_sensor_values = 0 ; change_sensor_values <teamRover->at(leader_index).sensors.size(); change_sensor_values++) {
+                    assert(!isnan(teamRover->at(leader_index).sensors.at(change_sensor_values)));
+                }
+                
+                double dx = teamRover->at(leader_index).path_finder_network.at(neural_network).outputvaluesNN.at(0);
+                double dy = teamRover->at(leader_index).path_finder_network.at(neural_network).outputvaluesNN.at(1);
+                teamRover->at(leader_index).path_finder_network.at(neural_network).outputvaluesNN.clear();
+                
+                //Move rovers
+                assert(!isnan(dx));
+                assert(!isnan(dy));
+                
+                teamRover->at(leader_index).move_rover(dx, dy);
+                teamRover->at(leader_index).x_position_vec.push_back(teamRover->at(leader_index).x_position);
+                teamRover->at(leader_index).y_position_vec.push_back(teamRover->at(leader_index).y_position);
+                
+                
+                //Check for blockage
+                bool agent_on_block=false;
+                for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+                    agent_on_block = checking_blockage(p_blocks_x, p_blocks_y, blocking_radius, teamRover->at(rover_number).x_position, teamRover->at(rover_number).y_position);
+                    if (!agent_on_block) {
+                        teamRover->at(leader_index).path_finder_network.at(leader_index).fitness = 9999999;
+                    }
+                }
             }
         }
     }
