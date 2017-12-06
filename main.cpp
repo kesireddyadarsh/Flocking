@@ -118,6 +118,7 @@ public:
     
     //flocking
     double fitness;
+    double best_distance;
     
 };
 
@@ -1879,11 +1880,27 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
     
     assert(leader_index <= teamRover->size());
     
-    teamRover->at(leader_index).create_path_network(10, p_topology);
+    int path_net = 10;
     
-    for (int iterations = 0 ; iterations < 100; iterations++) {
+    teamRover->at(leader_index).create_path_network(path_net, p_topology);
+    
+    double save_x_position = teamRover->at(leader_index).x_position_vec.at(0);
+    double save_y_position = teamRover->at(leader_index).y_position_vec.at(0);
+    
+    for (int iterations = 0 ; iterations < 10; iterations++) {
+        
+        // Reset leader values;
+        for (int temp_rover_number =0 ; temp_rover_number<teamRover->size(); temp_rover_number++) {
+            teamRover->at(temp_rover_number).x_position = teamRover->at(temp_rover_number).x_position_vec.at(0);
+            teamRover->at(temp_rover_number).y_position = teamRover->at(temp_rover_number).y_position_vec.at(0);
+            teamRover->at(temp_rover_number).theta = 0.0;
+        }
+        
         //Create 10 Neural Network
         for (int neural_network = 0 ; neural_network < teamRover->at(leader_index).path_finder_network.size();neural_network++) {
+            //Set near distance to POI high
+            teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance = 9999999.9999;
+            
             //Timestep to run simulation
             for (int time_step = 0 ; time_step < 5000 ; time_step++) {
                 
@@ -1925,12 +1942,70 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
                 for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
                     agent_on_block = checking_blockage(p_blocks_x, p_blocks_y, blocking_radius, teamRover->at(rover_number).x_position, teamRover->at(rover_number).y_position);
                     if (!agent_on_block) {
-                        teamRover->at(leader_index).path_finder_network.at(leader_index).fitness = 9999999;
+                        teamRover->at(leader_index).path_finder_network.at(leader_index).fitness += -9999999;
                     }
                 }
             }
+            
+            
+            
+            //Fnd the closest distance and fitness value
+            for (int position = 0 ; position < teamRover->at(leader_index).x_position_vec.size(); position++) {
+                double x_value = teamRover->at(leader_index).x_position_vec.at(position) - individualPOI->x_position_poi_vec.at(0);
+                double y_value = teamRover->at(leader_index).y_position_vec.at(position) - individualPOI->y_position_poi_vec.at(0);
+                double distance = sqrt((x_value*x_value)-(y_value*y_value));
+                if (teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance > distance) {
+                    teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance = distance;
+                }
+            }
+            
+            if (teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance < 1) {
+                teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance = 1;
+            }
+            
+            teamRover->at(leader_index).path_finder_network.at(neural_network).fitness += (100/teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance);
+            
+            teamRover->at(leader_index).x_position_vec.clear();
+            teamRover->at(leader_index).y_position_vec.clear();
+            teamRover->at(leader_index).x_position_vec.push_back(save_x_position);
+            teamRover->at(leader_index).y_position_vec.push_back(save_y_position);
         }
+        
+        //EA
+        for (int count = 0 ; count < (path_net/2); count++) {
+            //Generate random numbers
+            int random_number_1 = rand()%teamRover->at(leader_index).path_finder_network.size();
+            int random_number_2 = rand()%teamRover->at(leader_index).path_finder_network.size();
+            while ((random_number_1 == random_number_2) || (random_number_1 == teamRover->at(leader_index).path_finder_network.size()) || (random_number_2 == teamRover->at(leader_index).path_finder_network.size())) {
+                random_number_2 = rand()%teamRover->at(leader_index).path_finder_network.size();
+                random_number_1 = rand()%teamRover->at(leader_index).path_finder_network.size();
+            }
+            
+            double fitness_1 = teamRover->at(leader_index).path_finder_network.at(random_number_1).fitness;
+            double fitness_2 = teamRover->at(leader_index).path_finder_network.at(random_number_2).fitness;
+            
+            if (fitness_1 < fitness_2) {
+                teamRover->at(leader_index).path_finder_network.erase(teamRover->at(leader_index).path_finder_network.begin()+random_number_2);
+            }else{
+                teamRover->at(leader_index).path_finder_network.erase(teamRover->at(leader_index).path_finder_network.begin()+random_number_1);
+            }
+        }
+        
+        assert(teamRover->at(leader_index).path_finder_network.size() == path_net/2);
+        
+        for (int neural_network =0; neural_network < (path_net/2); neural_network++) {
+            int R = rand()%teamRover->at(leader_index).path_finder_network.size();
+            teamRover->at(leader_index).path_finder_network.push_back(teamRover->at(leader_index).path_finder_network.at(R));
+            teamRover->at(leader_index).path_finder_network.back().mutate();
+        }
+        
+        assert(teamRover->at(leader_index).path_finder_network.size() == path_net);
+        
+        
     }
+    
+    
+    cout<<"Done"<<endl;
 }
 
 /***************************
@@ -2031,6 +2106,8 @@ int main(int argc, const char * argv[]) {
         }
         
         assert(vec_distance_between_agents.size() == number_of_rovers);
+        
+        
         
         //bool test = checking_blockage(p_blocks_x, p_blocks_y, radius_blocking, teamRover.at(0).x_position_vec.at(0), teamRover.at(0).y_position_vec.at(0));
         /*
