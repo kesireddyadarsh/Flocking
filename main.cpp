@@ -1890,6 +1890,8 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
     vector<vector<double>> x_values;
     vector<vector<double>> y_values;
     
+    double best_path_index;
+    
     int generations = 10;
     
     
@@ -2010,12 +2012,25 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
         
         assert(teamRover->at(leader_index).path_finder_network.size() == path_net);
         
-        if (iterations != generations) {
+        if (iterations == generations-1) {
+            best_path_index = 9999999;
+            double temp_best = teamRover->at(leader_index).path_finder_network.at(0).fitness;
+            for (int net = 0 ; net < teamRover->at(leader_index).path_finder_network.size(); net++) {
+                if (temp_best > teamRover->at(leader_index).path_finder_network.at(net).fitness) {
+                    temp_best = teamRover->at(leader_index).path_finder_network.at(net).fitness;
+                    best_path_index = net;
+                }
+            }
+        }
+        
+        if (iterations != generations-1) {
             x_values.clear();
             y_values.clear();
         }
-        
     }
+    
+    
+    
     
     
     cout<<"Done"<<endl;
