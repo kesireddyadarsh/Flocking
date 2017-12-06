@@ -1887,7 +1887,13 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
     double save_x_position = teamRover->at(leader_index).x_position_vec.at(0);
     double save_y_position = teamRover->at(leader_index).y_position_vec.at(0);
     
-    for (int iterations = 0 ; iterations < 10; iterations++) {
+    vector<vector<double>> x_values;
+    vector<vector<double>> y_values;
+    
+    int generations = 10;
+    
+    
+    for (int iterations = 0 ; iterations < generations; iterations++) {
         
         // Reset leader values;
         for (int temp_rover_number =0 ; temp_rover_number<teamRover->size(); temp_rover_number++) {
@@ -1965,6 +1971,9 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
             
             teamRover->at(leader_index).path_finder_network.at(neural_network).fitness += (100/teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance);
             
+            x_values.push_back(teamRover->at(leader_index).x_position_vec);
+            y_values.push_back(teamRover->at(leader_index).y_position_vec);
+            
             teamRover->at(leader_index).x_position_vec.clear();
             teamRover->at(leader_index).y_position_vec.clear();
             teamRover->at(leader_index).x_position_vec.push_back(save_x_position);
@@ -2001,6 +2010,10 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
         
         assert(teamRover->at(leader_index).path_finder_network.size() == path_net);
         
+        if (iterations != generations) {
+            x_values.clear();
+            y_values.clear();
+        }
         
     }
     
