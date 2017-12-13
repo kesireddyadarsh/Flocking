@@ -1892,7 +1892,7 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
     
     double best_path_index;
     
-    int generations = 100;
+    int generations = 1;
     
     
     for (int iterations = 0 ; iterations < generations; iterations++) {
@@ -1978,7 +1978,7 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
             
             cout<<teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance<<endl;
             
-            teamRover->at(leader_index).path_finder_network.at(neural_network).fitness += (1000000/teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance);
+            teamRover->at(leader_index).path_finder_network.at(neural_network).fitness += (individualPOI->value_poi_vec.at(0)/teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance);
             
             x_values.push_back(teamRover->at(leader_index).x_position_vec);
             y_values.push_back(teamRover->at(leader_index).y_position_vec);
