@@ -1887,8 +1887,8 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
     double save_x_position = teamRover->at(leader_index).x_position_vec.at(0);
     double save_y_position = teamRover->at(leader_index).y_position_vec.at(0);
     
-    vector<vector<double>> x_values;
-    vector<vector<double>> y_values;
+    vector< vector <double> > x_values;
+    vector< vector <double> > y_values;
     
     double best_path_index;
     
