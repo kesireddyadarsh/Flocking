@@ -1892,7 +1892,7 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
     
     double best_path_index;
     
-    int generations = 10;
+    int generations = 100;
     
     
     for (int iterations = 0 ; iterations < generations; iterations++) {
@@ -1908,9 +1908,12 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
         for (int neural_network = 0 ; neural_network < teamRover->at(leader_index).path_finder_network.size();neural_network++) {
             //Set near distance to POI high
             teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance = 9999999.9999;
+            teamRover->at(leader_index).x_position  = teamRover->at(leader_index).x_position_vec.at(0);
+            teamRover->at(leader_index).y_position = teamRover->at(leader_index).y_position_vec.at(0);
+            teamRover->at(leader_index).theta = 0.0;
             
             //Timestep to run simulation
-            for (int time_step = 0 ; time_step < 5000 ; time_step++) {
+            for (int time_step = 0 ; time_step < 250 ; time_step++) {
                 
                 // Set X Y and theta to keep track of previous values
                 teamRover->at(leader_index).previous_x_position = teamRover->at(leader_index).x_position;
@@ -1956,6 +1959,7 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
             }
             
             
+            cout<<teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance<<endl;
             
             //Fnd the closest distance and fitness value
             for (int position = 0 ; position < teamRover->at(leader_index).x_position_vec.size(); position++) {
@@ -1966,15 +1970,34 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
                     teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance = distance;
                 }
             }
+            cout<<teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance<<endl;
             
             if (teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance < 1) {
                 teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance = 1;
             }
             
-            teamRover->at(leader_index).path_finder_network.at(neural_network).fitness += (100/teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance);
+            cout<<teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance<<endl;
+            
+            teamRover->at(leader_index).path_finder_network.at(neural_network).fitness += (1000000/teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance);
             
             x_values.push_back(teamRover->at(leader_index).x_position_vec);
             y_values.push_back(teamRover->at(leader_index).y_position_vec);
+            
+            if (iterations == generations-1) {
+                FILE* p_file;
+                p_file = fopen("XY_leader.txt", "a");
+                for (int index = 0 ; index < teamRover->at(leader_index).x_position_vec.size(); index++) {
+                    fprintf(p_file, "%f \t %f \n",teamRover->at(leader_index).x_position_vec.at(index),teamRover->at(leader_index).y_position_vec.at(index));
+                }
+                fprintf(p_file, "\n");
+                fclose(p_file);
+            }
+            
+            FILE* p_values;
+            p_values = fopen("Values.txt", "a");
+            fprintf(p_values, "%f \t %f \n",teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance,teamRover->at(leader_index).path_finder_network.at(neural_network).fitness);
+            fclose(p_values);
+            
             
             teamRover->at(leader_index).x_position_vec.clear();
             teamRover->at(leader_index).y_position_vec.clear();
@@ -2029,7 +2052,12 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
         }
     }
     
-    
+    for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+        teamRover->at(rover_number).x_position = teamRover->at(rover_number).x_position_vec.at(0);
+        teamRover->at(rover_number).y_position = teamRover->at(rover_number).y_position_vec.at(0);
+        teamRover->at(rover_number).theta = 0.0;
+        teamRover->at(rover_number).velocity_of_agent = ((double)rand()) / ((double)RAND_MAX) * 1.0 + 0.0;
+    }
     
     
     
@@ -2061,7 +2089,7 @@ int main(int argc, const char * argv[]) {
         //Create POI
         individualPOI.x_position_poi_vec.push_back(50.0);
         individualPOI.y_position_poi_vec.push_back(50.0);
-        individualPOI.value_poi_vec.push_back(100);
+        individualPOI.value_poi_vec.push_back(100000);
         
         //vectors of rovers
         vector<Rover> teamRover;
@@ -2105,12 +2133,12 @@ int main(int argc, const char * argv[]) {
         double scaling_number = find_scaling_number(p_rover,p_poi);
         
         //Blocking Area
-        double radius_blocking = 1.0;
+        double radius_blocking = 20.0;
         vector<double> blocks_x;
         vector<double>* p_blocks_x = &blocks_x;
         vector<double> blocks_y;
         vector<double>* p_blocks_y = &blocks_y;
-        double blocking_x_position = 0.0;
+        double blocking_x_position = 25.0;
         double blocking_y_position = 25.0;
         
         blocks_x.push_back(blocking_x_position);
@@ -2137,17 +2165,20 @@ int main(int argc, const char * argv[]) {
         
         
         
-        //bool test = checking_blockage(p_blocks_x, p_blocks_y, radius_blocking, teamRover.at(0).x_position_vec.at(0), teamRover.at(0).y_position_vec.at(0));
-        /*
+        bool test = checking_blockage(p_blocks_x, p_blocks_y, radius_blocking, teamRover.at(0).x_position_vec.at(0), teamRover.at(0).y_position_vec.at(0));
+        
+       /*
         for (int generation = 0 ; generation < 1 ; generation ++) {
             simulation(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y,p_vec_distance_between_agents, agent_collision_radius);
-            simulation_each_rover(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y, p_vec_distance_between_agents, agent_collision_radius);
+            //simulation_each_rover(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y, p_vec_distance_between_agents, agent_collision_radius);
         }
         
-        for (int generation = 0 ; generation < 10 ; generation ++) {
-            simulation_new_try(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y, p_vec_distance_between_agents, agent_collision_radius);
+        //for (int generation = 0 ; generation < 10 ; generation ++) {
+            //simulation_new_try(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y, p_vec_distance_between_agents, agent_collision_radius);
             
-        }*/
+        //}
+        
+        */
         dynamic_simulation(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y, p_vec_distance_between_agents, agent_collision_radius, p_topology);
         
         
