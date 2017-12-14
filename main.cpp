@@ -119,6 +119,7 @@ public:
     //flocking
     double fitness;
     double best_distance;
+    vector<double> distance_values;
     
 };
 
@@ -1908,6 +1909,7 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
         for (int neural_network = 0 ; neural_network < teamRover->at(leader_index).path_finder_network.size();neural_network++) {
             //Set near distance to POI high
             teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance = 9999999.9999;
+            double lowest_distance = 9999999.9999;
             teamRover->at(leader_index).x_position  = teamRover->at(leader_index).x_position_vec.at(0);
             teamRover->at(leader_index).y_position = teamRover->at(leader_index).y_position_vec.at(0);
             teamRover->at(leader_index).theta = 0.0;
@@ -1959,24 +1961,26 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
             }
             
             
-            cout<<teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance<<endl;
             
             //Fnd the closest distance and fitness value
             for (int position = 0 ; position < teamRover->at(leader_index).x_position_vec.size(); position++) {
                 double x_value = teamRover->at(leader_index).x_position_vec.at(position) - individualPOI->x_position_poi_vec.at(0);
                 double y_value = teamRover->at(leader_index).y_position_vec.at(position) - individualPOI->y_position_poi_vec.at(0);
-                double distance = sqrt((x_value*x_value)-(y_value*y_value));
-                if (teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance > distance) {
-                    teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance = distance;
+                double distance = sqrt((x_value*x_value)+(y_value*y_value));
+                if (lowest_distance > distance) {
+                    lowest_distance = distance;
                 }
+                teamRover->at(leader_index).path_finder_network.at(neural_network).distance_values.push_back(distance);
             }
-            cout<<teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance<<endl;
+            double index = *min_element(teamRover->at(leader_index).path_finder_network.at(neural_network).distance_values.begin(),teamRover->at(leader_index).path_finder_network.at(neural_network).distance_values.end());
+            
+            teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance = teamRover->at(leader_index).path_finder_network.at(neural_network).distance_values.at(index) ;
+            
+            assert(lowest_distance = teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance );
             
             if (teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance < 1) {
                 teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance = 1;
             }
-            
-            cout<<teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance<<endl;
             
             teamRover->at(leader_index).path_finder_network.at(neural_network).fitness += (individualPOI->value_poi_vec.at(0)/teamRover->at(leader_index).path_finder_network.at(neural_network).best_distance);
             
@@ -2001,6 +2005,7 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
             
             teamRover->at(leader_index).x_position_vec.clear();
             teamRover->at(leader_index).y_position_vec.clear();
+            teamRover->at(leader_index).path_finder_network.at(neural_network).distance_values.clear();
             teamRover->at(leader_index).x_position_vec.push_back(save_x_position);
             teamRover->at(leader_index).y_position_vec.push_back(save_y_position);
         }
