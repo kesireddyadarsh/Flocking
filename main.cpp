@@ -1890,10 +1890,13 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
     
     vector< vector <double> > x_values;
     vector< vector <double> > y_values;
+    vector<double> best_path_x;
+    vector<double> best_path_y;
     
     double best_path_index;
     
     int generations = 1;
+    int number_of_steps = 250;
     
     
     for (int iterations = 0 ; iterations < generations; iterations++) {
@@ -1915,7 +1918,7 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
             teamRover->at(leader_index).theta = 0.0;
             
             //Timestep to run simulation
-            for (int time_step = 0 ; time_step < 250 ; time_step++) {
+            for (int time_step = 0 ; time_step < number_of_steps ; time_step++) {
                 
                 // Set X Y and theta to keep track of previous values
                 teamRover->at(leader_index).previous_x_position = teamRover->at(leader_index).x_position;
@@ -2049,6 +2052,11 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
                     best_path_index = net;
                 }
             }
+            
+            for (int index = 0 ; index < x_values.at(best_path_index).size(); index++) {
+                best_path_x.push_back(x_values.at(best_path_index).at(index));
+                best_path_y.push_back(y_values.at(best_path_index).at(index));
+            }
         }
         
         if (iterations != generations-1) {
@@ -2063,6 +2071,16 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
         teamRover->at(rover_number).theta = 0.0;
         teamRover->at(rover_number).velocity_of_agent = ((double)rand()) / ((double)RAND_MAX) * 1.0 + 0.0;
     }
+    
+    for (int time_step = 0 ; time_step < number_of_steps ; time_step++) {
+        
+        //calculate path for each agent
+        
+        
+        
+    }
+    
+    
     
     
     
