@@ -16,6 +16,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <complex>
 
 
 using namespace std;
@@ -23,7 +24,29 @@ using namespace std;
 bool run_simulation = true;
 bool test_simulation = true;
 
+/********************************************************
+ Variables for flocking. Make modification after implementation
+ ********************************************************/
+
 #define PI 3.14159265
+#define d 7
+#define r 1.2*d
+#define r_prime 0.6* r
+#define kappa 1.2
+#define d_p 0.6*d
+#define r_p 1.2*d_p
+#define epsilon 0.1
+#define aa 5
+#define bb aa
+#define h_a 0.2
+#define h_b 0.9
+
+const double c1_b = 10;
+const double c2_b = 2*sqrt(c1_b);
+const double c1_g = 0.2*c1_b;
+const double c2_g = 2*sqrt(c1_g);
+const double c1_a = 0.5*c1_g;
+const double c2_a = 2*sqrt(c1_a);
 
 
 /*************************
@@ -284,6 +307,8 @@ public:
     
     //velocity
     double velocity_of_agent;
+    double velocity_of_agent_x;
+    double velocity_of_agent_y;
     
 };
 
@@ -1862,7 +1887,102 @@ void simulation_new_try(vector<Rover>* teamRover, POI* individualPOI, double sca
 }
 
 
-void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_number, int blocking_radius, vector<double>* p_blocks_x, vector<double>* p_blocks_y, vector<double>* p_vec_distance_between_agents, double agent_collision_radius, vector<unsigned>* p_topology){
+
+/******************************************************************************************
+ Dynamic simulation functions
+ *****************************************************************************************/
+
+//Calculate zigma_norm
+double zigma_norm(vector<double>* p_values){
+    double sumation = 0;
+    for (int size=0; size < p_values->size(); size++) {
+        sumation += pow(p_values->at(size), 2);
+    }
+    
+    return sqrt(sumation);
+}
+
+double zigma_1(vector<double>* p_values){
+    double norm_value = zigma_norm(p_values);
+    return norm_value/(pow(sqrt(1+norm_value),2));
+}
+
+// Calculate n_i
+void n_i(int agent_number, vector<Rover>* p_rover){
+    vector<double> values;
+    vector<double>* p_values = &values;
+    
+    //Calculate r_alpha value
+    p_values->at(r);
+    double r_alpha = zigma_norm(p_values);
+    p_values->clear();
+    assert(p_values->size() == 0 );
+    
+    int k = 0;
+    
+    vector<double> zero_vector;
+    for (int rover = 0 ; rover < p_rover->size(); rover++) {
+        zero_vector.push_back(0);
+    }
+    
+    
+    for (int rover_number = 0 ; rover_number < p_rover->size(); rover_number++) {
+        if (agent_number != rover_number) {
+            //calculate temp_r_alpha
+            p_values->push_back(p_rover->at(rover_number).x_position - p_rover->at(agent_number).x_position);
+            p_values->push_back(p_rover->at(rover_number).y_position - p_rover->at(agent_number).y_position);
+            double temp_r_alpha = zigma_norm(p_values);
+            p_values->clear();
+            assert(p_values->size() == 0);
+            
+            if (temp_r_alpha <= r_alpha) {
+                k++;
+                zero_vector.at(k) = rover_number;
+            }
+        }
+    }
+    
+    
+}
+
+void fi_alpha(int agent_number,vector<Rover>* p_rover){
+    vector<double> values;
+    vector<double>* p_values = &values;
+    p_values->push_back(r);
+    double r_alpha = zigma_norm(p_values);
+    p_values->clear();
+    p_values->push_back(d);
+    double d_alpha = zigma_norm(p_values);
+    p_values->clear();
+    
+    assert(p_values->size() == 0);
+    
+    n_i(agent_number, p_rover);
+    
+    for (int rover_number = 0 ; rover_number < p_rover->size(); rover_number++) {
+        
+    }
+}
+
+
+void fi_gamma(int agent_number, vector<Rover>* p_rover){
+    
+}
+
+void dynamic_simulation_run(vector<Rover>* teamRover, POI* individualPOI, double scaling_number, int blocking_radius, vector<double>* p_blocks_x, vector<double>* p_blocks_y, vector<double>* p_vec_distance_between_agents, double agent_collision_radius, vector<unsigned>* p_topology,vector<double>* p_t){
+    
+    for (int time_step = 0; time_step < p_t->size(); time_step++) {
+        for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
+            n_i(rover_number, teamRover);
+            fi_alpha(rover_number,teamRover);
+        }
+    }
+    
+}
+
+
+
+void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double scaling_number, int blocking_radius, vector<double>* p_blocks_x, vector<double>* p_blocks_y, vector<double>* p_vec_distance_between_agents, double agent_collision_radius, vector<unsigned>* p_topology,vector<double>* p_t){
     
     
     //setting all rovers to inital state
@@ -2069,20 +2189,18 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
         teamRover->at(rover_number).x_position = teamRover->at(rover_number).x_position_vec.at(0);
         teamRover->at(rover_number).y_position = teamRover->at(rover_number).y_position_vec.at(0);
         teamRover->at(rover_number).theta = 0.0;
-        teamRover->at(rover_number).velocity_of_agent = ((double)rand()) / ((double)RAND_MAX) * 1.0 + 0.0;
+        teamRover->at(rover_number).velocity_of_agent_x = ((double)rand()) / ((double)RAND_MAX) * 1.0 + 0.0;// make it vector with x and y position
+        teamRover->at(rover_number).velocity_of_agent_y = ((double)rand()) / ((double)RAND_MAX) * 1.0 + 0.0;
     }
+    
+    //Place each rover at random location
+    
+    
     
     for (int time_step = 0 ; time_step < number_of_steps ; time_step++) {
-        
         //calculate path for each agent
         
-        
-        
     }
-    
-    
-    
-    
     
     cout<<"Done"<<endl;
 }
@@ -2093,6 +2211,7 @@ void dynamic_simulation(vector<Rover>* teamRover, POI* individualPOI, double sca
 
 int main(int argc, const char * argv[]) {
      srand((unsigned)time(NULL));
+    srand(time(NULL));
     if (test_simulation) {
         test_all_sensors();
         cout<<"All Test"<<endl;
@@ -2102,7 +2221,7 @@ int main(int argc, const char * argv[]) {
     if (run_simulation) {
 
         //First set up environment
-        int number_of_rovers = 5;
+        int number_of_rovers = 150;
         
         
         //Set values of poi's
@@ -2121,12 +2240,21 @@ int main(int argc, const char * argv[]) {
         for (int i=0; i<number_of_rovers; i++) {
             teamRover.push_back(a);
         }
-        
+        /*
         for (int i=0 ; i<number_of_rovers; i++) {
             teamRover.at(i).x_position_vec.push_back(0+(0.5*i));
             teamRover.at(i).y_position_vec.push_back(0);
         }
+        */
         
+        for (int rover_number = 0; rover_number <teamRover.size(); rover_number++) {
+            double x=(double)rand()/(RAND_MAX + 1)+1+(rand()%4);
+            double y=(double)rand()/(RAND_MAX + 1)+1+(rand()%4);
+            teamRover.at(rover_number).x_position_vec.push_back(x);
+            teamRover.at(rover_number).y_position_vec.push_back(y);
+            teamRover.at(rover_number).x_position = x;
+            teamRover.at(rover_number).y_position = y;
+        }
         //Second set up neural networks
         //Create numNN of neural network with pointer
         int numNN = 1;
@@ -2188,7 +2316,7 @@ int main(int argc, const char * argv[]) {
         
         
         
-        bool test = checking_blockage(p_blocks_x, p_blocks_y, radius_blocking, teamRover.at(0).x_position_vec.at(0), teamRover.at(0).y_position_vec.at(0));
+        //bool test = checking_blockage(p_blocks_x, p_blocks_y, radius_blocking, teamRover.at(0).x_position_vec.at(0), teamRover.at(0).y_position_vec.at(0));
         
        /*
         for (int generation = 0 ; generation < 1 ; generation ++) {
@@ -2202,7 +2330,16 @@ int main(int argc, const char * argv[]) {
         //}
         
         */
-        dynamic_simulation(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y, p_vec_distance_between_agents, agent_collision_radius, p_topology);
+        
+        vector<double> t;
+        vector<double>* p_t = &t;
+        
+        for (double count = 0.00; count < 70; ) {
+            t.push_back(count);
+            count = count + 0.09;
+        }
+        
+        dynamic_simulation_run(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y, p_vec_distance_between_agents, agent_collision_radius, p_topology,p_t);
         
         
     }
