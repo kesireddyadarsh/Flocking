@@ -310,6 +310,10 @@ public:
     double velocity_of_agent_x;
     double velocity_of_agent_y;
     
+    //distance between rovers
+    vector<double> vec_distance_between_agents;
+    
+    
 };
 
 // variables used: indiNet -- object to Net
@@ -1908,12 +1912,12 @@ double zigma_1(vector<double>* p_values){
 }
 
 // Calculate n_i
-void n_i(int agent_number, vector<Rover>* p_rover){
+vector<double> n_i(int agent_number, vector<Rover>* p_rover){
     vector<double> values;
     vector<double>* p_values = &values;
     
     //Calculate r_alpha value
-    p_values->at(r);
+    p_values->push_back(r);
     double r_alpha = zigma_norm(p_values);
     p_values->clear();
     assert(p_values->size() == 0 );
@@ -1924,6 +1928,9 @@ void n_i(int agent_number, vector<Rover>* p_rover){
     for (int rover = 0 ; rover < p_rover->size(); rover++) {
         zero_vector.push_back(0);
     }
+    
+    //Save the agent number
+    vector<double> temp_saved_number;
     
     
     for (int rover_number = 0 ; rover_number < p_rover->size(); rover_number++) {
@@ -1938,10 +1945,16 @@ void n_i(int agent_number, vector<Rover>* p_rover){
             if (temp_r_alpha <= r_alpha) {
                 k++;
                 zero_vector.at(k) = rover_number;
+                temp_saved_number.push_back(rover_number);
             }
         }
     }
     
+    return temp_saved_number;
+    
+}
+
+void phi_alpha(double r_alpha,double d_alpha){
     
 }
 
@@ -1957,10 +1970,19 @@ void fi_alpha(int agent_number,vector<Rover>* p_rover){
     
     assert(p_values->size() == 0);
     
-    n_i(agent_number, p_rover);
+    vector<vector<double>> agent_numbers;
     
-    for (int rover_number = 0 ; rover_number < p_rover->size(); rover_number++) {
-        
+    agent_numbers.push_back(n_i(agent_number, p_rover));
+    
+    double sum_1 = 0;
+    double sum_2 = 0;
+    
+    for (int index_number = 0 ; index_number < agent_numbers.at(0).size(); index_number++) {
+        for (int index_number_1 = 0; index_number_1 < p_rover->size(); index_number_1++) {
+            if (agent_numbers.at(0).at(index_number) == index_number_1) {
+                
+            }
+        }
     }
 }
 
@@ -1969,11 +1991,14 @@ void fi_gamma(int agent_number, vector<Rover>* p_rover){
     
 }
 
-void dynamic_simulation_run(vector<Rover>* teamRover, POI* individualPOI, double scaling_number, int blocking_radius, vector<double>* p_blocks_x, vector<double>* p_blocks_y, vector<double>* p_vec_distance_between_agents, double agent_collision_radius, vector<unsigned>* p_topology,vector<double>* p_t){
+void dynamic_simulation_run(vector<Rover>* teamRover, POI* individualPOI, double scaling_number, int blocking_radius, vector<double>* p_blocks_x, vector<double>* p_blocks_y, double agent_collision_radius, vector<unsigned>* p_topology,vector<double>* p_t){
+    
+    vector<vector<double>> agent_numbers;
     
     for (int time_step = 0; time_step < p_t->size(); time_step++) {
         for (int rover_number = 0 ; rover_number < teamRover->size(); rover_number++) {
-            n_i(rover_number, teamRover);
+            
+            agent_numbers.push_back(n_i(rover_number, teamRover));
             fi_alpha(rover_number,teamRover);
         }
     }
@@ -2248,8 +2273,8 @@ int main(int argc, const char * argv[]) {
         */
         
         for (int rover_number = 0; rover_number <teamRover.size(); rover_number++) {
-            double x=(double)rand()/(RAND_MAX + 1)+1+(rand()%4);
-            double y=(double)rand()/(RAND_MAX + 1)+1+(rand()%4);
+            double x=(double)rand()/(RAND_MAX + 1)+1+(rand()%50);
+            double y=(double)rand()/(RAND_MAX + 1)+1+(rand()%50);
             teamRover.at(rover_number).x_position_vec.push_back(x);
             teamRover.at(rover_number).y_position_vec.push_back(y);
             teamRover.at(rover_number).x_position = x;
@@ -2274,11 +2299,24 @@ int main(int argc, const char * argv[]) {
             teamRover.at(temp_rover_number).x_position = teamRover.at(temp_rover_number).x_position_vec.at(0);
             teamRover.at(temp_rover_number).y_position = teamRover.at(temp_rover_number).y_position_vec.at(0);
             teamRover.at(temp_rover_number).previous_x_position = teamRover.at(temp_rover_number).x_position_vec.at(0);
-            teamRover.at(temp_rover_number).previous_x_position = teamRover.at(temp_rover_number).y_position_vec.at(0);
+            teamRover.at(temp_rover_number).previous_y_position = teamRover.at(temp_rover_number).y_position_vec.at(0);
             teamRover.at(temp_rover_number).theta = 0.0;
             teamRover.at(temp_rover_number).previous_theta = 0.0;
             
         }
+        
+        bool b_location_agents = false;
+        
+        if (b_location_agents) {
+            FILE* p_agent;
+            p_agent = fopen("location.txt", "a");
+            for (int rover_number = 0 ; rover_number < teamRover.size(); rover_number++) {
+                fprintf(p_agent, "%f \t %f \n", teamRover.at(rover_number).x_position, teamRover.at(rover_number).y_position);
+            }
+            fclose(p_agent);
+            
+        }
+        
         
         //Find Scaling Number
         double scaling_number = find_scaling_number(p_rover,p_poi);
@@ -2303,17 +2341,23 @@ int main(int argc, const char * argv[]) {
         
         double agent_collision_radius = 0.15;
         
-        vector<double> vec_distance_between_agents;
-        vector<double>* p_vec_distance_between_agents = & vec_distance_between_agents;
         
-        double distance;
+        /*double distance;
         for (int rover_number = 0 ; rover_number < teamRover.size(); rover_number++) {
             distance = cal_distance(teamRover.at(rover_number).x_position, teamRover.at(rover_number).y_position,teamRover.at(select_leader).x_position,teamRover.at(select_leader).y_position);
             vec_distance_between_agents.push_back(distance);
+        }*/
+        
+        for (int rover_number = 0 ; rover_number < teamRover.size(); rover_number++) {
+            for (int rover_number_1 = 0 ; rover_number_1 <teamRover.size(); rover_number_1++) {
+                double distance;
+                if (rover_number_1 != rover_number) {
+                    distance = cal_distance(teamRover.at(rover_number).x_position, teamRover.at(rover_number).y_position, teamRover.at(rover_number_1).x_position, teamRover.at(rover_number_1).y_position);
+                    teamRover.at(rover_number).vec_distance_between_agents.push_back(distance);
+                }
+            }
+         assert(teamRover.at(rover_number).vec_distance_between_agents.size() == number_of_rovers-1);
         }
-        
-        assert(vec_distance_between_agents.size() == number_of_rovers);
-        
         
         
         //bool test = checking_blockage(p_blocks_x, p_blocks_y, radius_blocking, teamRover.at(0).x_position_vec.at(0), teamRover.at(0).y_position_vec.at(0));
@@ -2339,7 +2383,7 @@ int main(int argc, const char * argv[]) {
             count = count + 0.09;
         }
         
-        dynamic_simulation_run(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y, p_vec_distance_between_agents, agent_collision_radius, p_topology,p_t);
+        dynamic_simulation_run(p_rover, p_poi, scaling_number, radius_blocking, p_blocks_x, p_blocks_y,  agent_collision_radius, p_topology,p_t);
         
         
     }
