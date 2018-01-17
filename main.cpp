@@ -1954,8 +1954,38 @@ vector<double> n_i(int agent_number, vector<Rover>* p_rover){
     
 }
 
-void phi_alpha(double r_alpha,double d_alpha){
-    
+double ro_h(double z, double h){
+    if (z>=0 && z<h) {
+        return 1;
+    }else if (z>=h && z<=1){
+        return 0.5*(1+cos(PI*((z-h)/(1-h))));
+    }
+    return 0;
+}
+
+double zigma_1(double z){
+    return z/(sqrt(1+ pow(norm(z),2)));
+}
+
+//aa bb
+double phi(double z){
+    double c = abs(aa-bb)/sqrt(4*aa*bb);
+    return (1/2)*((aa+bb)*zigma_1(z+c)+(aa-bb));
+}
+
+double phi_alpha(double z,double r_alpha,double d_alpha){
+    return ro_h(z,h_a)*phi((z-d_alpha));
+}
+
+vector<double> nij(vector<double> qi, vector<double> qj){
+    vector<double> return_vec;
+    assert(qi.size() == qj.size());
+    for (int index = 0 ; index < qi.size(); index++) {
+        double temp = qj.at(index) - qi.at(index);
+        double temp_1 = (sqrt(1+epsilon*((pow(norm(qj.at(index)-qi.at(index)),2)))));
+        return_vec.push_back(temp/temp_1);
+    }
+    return return_vec;
 }
 
 void fi_alpha(int agent_number,vector<Rover>* p_rover){
@@ -1980,7 +2010,13 @@ void fi_alpha(int agent_number,vector<Rover>* p_rover){
     for (int index_number = 0 ; index_number < agent_numbers.at(0).size(); index_number++) {
         for (int index_number_1 = 0; index_number_1 < p_rover->size(); index_number_1++) {
             if (agent_numbers.at(0).at(index_number) == index_number_1) {
+                p_values->push_back(p_rover->at(agent_number).x_position - p_rover->at(index_number_1).x_position);
+                p_values->push_back(p_rover->at(agent_number).y_position - p_rover->at(index_number_1).y_position);
                 
+                
+                sum_1 += phi_alpha(zigma_1(p_values), r_alpha, d_alpha);
+                
+                p_values->clear();
             }
         }
     }
