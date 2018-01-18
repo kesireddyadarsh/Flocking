@@ -48,6 +48,9 @@ const double c2_g = 2*sqrt(c1_g);
 const double c1_a = 0.5*c1_g;
 const double c2_a = 2*sqrt(c1_a);
 
+const vector<double> qd={200,30};
+const vector<double> pd={5,0};
+
 
 /*************************
  Neural Network
@@ -258,6 +261,7 @@ class Rover{
     //Environment environment_object;
 public:
     double x_position,y_position;
+    double p_x,p_y;
     double previous_x_position, previous_y_position;
     vector<double> x_position_vec,y_position_vec;
     vector<double> sensors;
@@ -2024,6 +2028,24 @@ void fi_alpha(int agent_number,vector<Rover>* p_rover){
 
 
 void fi_gamma(int agent_number, vector<Rover>* p_rover){
+    vector<double> value;
+    vector<double>* p_values = &value;
+    value.push_back(p_rover->at(agent_number).x_position - qd.at(0));
+    double temp_1 = zigma_1(p_values);
+    value.clear();
+    value.push_back(p_rover->at(agent_number).y_position - qd.at(1));
+    double temp_2 = zigma_1(p_values);
+    value.clear();
+    
+    double temp_3 = 0;
+    double temp_4 = 0;
+    
+    
+    double first_value = -c1_g*(temp_1)-c2_g;
+    
+}
+
+void fi_beta(int agent_number, vector<Rover>* p_rover){
     
 }
 
@@ -2036,6 +2058,7 @@ void dynamic_simulation_run(vector<Rover>* teamRover, POI* individualPOI, double
             
             agent_numbers.push_back(n_i(rover_number, teamRover));
             fi_alpha(rover_number,teamRover);
+            fi_gamma(rover_number, teamRover);
         }
     }
     
